@@ -1,0 +1,2 @@
+# sjzqx
+Django Web Application
