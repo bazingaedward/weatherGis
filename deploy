@@ -1,0 +1,56 @@
+#!/bin/bash
+
+BASEDIR=$(dirname $(readlink -f "$0"))
+
+if [ -d "$BASEDIR/app" ]; then
+    read -p "The directory [$BASEDIR/app] exists. Do you want to overwrite? [y/N]" yn
+    case $yn in
+        [Yy]* ) rm -rf "$BASEDIR/app" ;;
+        * ) exit ;;
+    esac
+fi
+
+# function : python to bytecode
+py2bc(){
+  dir=$(dirname "$1")
+  filename=$(basename "$1" .py)
+  cythonize -i "$1"
+  strip $dir/$filename.*.so
+  rm $dir/$filename.c $dir/$filename.py
+}
+
+echo "Copy files from [src] to [app] ..."
+rsync -aHAX $BASEDIR/src/ $BASEDIR/app
+
+cd $BASEDIR/app
+
+echo "Set DEBUG to False ..."
+sed -i 's/DEBUG = True/DEBUG = False/g' $(find . -name settings.py)
+
+echo "Collect static files ..."
+./manage.py collectstatic --noinput -i ckdev -v 0
+
+echo "Update nginx configuration ..."
+sed -i 's#/chinkun/src/#/chinkun/app/#g' nginx.conf
+
+echo "Delete python bytecode cache ..."
+find . -type d -name __pycache__ -exec rm -rf "{}" \; &> /dev/null
+
+echo "Delete orignal static directories ..."
+find . -mindepth 2 -type d -name static -exec rm -rf "{}" \; &> /dev/null
+
+echo "Encrypt python source code ..."
+# py2bc anhui/urls.py
+# py2bc weather/views.py
+
+echo "Obfuscate javascript source ..."
+jcc --js /chinkun/src/weather/static/weather/ckdev/platform.js \
+    --js_output_file /tmp/platform.js
+jcc --compilation_level WHITESPACE_ONLY \
+    --js /chinkun/src/weather/static/weather/jquery-easyui-1.5.2/jquery.min.js \
+    --js /chinkun/src/weather/static/weather/jquery-easyui-1.5.2/jquery.easyui.min.js \
+    --js /chinkun/src/weather/static/weather/jquery-easyui-1.5.2/jquery.easyui.mobile.js \
+    --js /chinkun/src/weather/static/weather/openlayers-4.2.0/ol.js \
+    --js /tmp/platform.js \
+    --js_output_file /chinkun/app/static/weather/platform.js
+# jso /chinkun/app/static/weather/Iearth/Iearth.js -l 20 -i -v Animation AnimationViewModel Appearance ArcGisMapServerImageryProvider AssociativeArray AxisAlignedBoundingBox barycentricCoordinates BaseLayerPicker BaseLayerPickerViewModel Billboard BillboardCollection BillboardGraphics BillboardVisualizer binarySearch BingMapsApi BingMapsGeocoderService BingMapsImageryProvider BingMapsStyle BlendEquation BlendFunction BlendingState BlendOption BoundingRectangle BoundingSphere BoxGeometry BoxGeometryUpdater BoxGraphics BoxOutlineGeometry CallbackProperty Camera CameraEventAggregator CameraEventType cancelAnimationFrame Cartesian2 Cartesian3 Cartesian4 Cartographic CartographicGeocoderService CatmullRomSpline CesiumInspector CesiumInspectorViewModel CesiumMath CesiumTerrainProvider CesiumWidget CheckerboardMaterialProperty CircleGeometry CircleOutlineGeometry Clock ClockRange ClockStep ClockViewModel clone Color ColorBlendMode ColorGeometryInstanceAttribute ColorMaterialProperty combine Command ComponentDatatype CompositeEntityCollection CompositeMaterialProperty CompositePositionProperty CompositeProperty ConstantPositionProperty ConstantProperty CornerType CorridorGeometry CorridorGeometryUpdater CorridorGraphics CorridorOutlineGeometry createCommand createGuid createOpenStreetMapImageryProvider createTangentSpaceDebugPrimitive createTaskProcessorWorker createTileMapServiceImageryProvider Credit CreditDisplay CubicRealPolynomial CullFace CullingVolume CustomDataSource CylinderGeometry CylinderGeometryUpdater CylinderGraphics CylinderOutlineGeometry CzmlDataSource DataSource DataSourceClock DataSourceCollection DataSourceDisplay DebugAppearance DebugCameraPrimitive DebugModelMatrixPrimitive DefaultProxy defaultValue DepthFunction destroyObject DeveloperError DiscardMissingTileImagePolicy DistanceDisplayCondition DistanceDisplayConditionGeometryInstanceAttribute DynamicGeometryUpdater EasingFunction EllipseGeometry EllipseGeometryUpdater EllipseGraphics EllipseOutlineGeometry Ellipsoid EllipsoidGeodesic EllipsoidGeometry EllipsoidGeometryUpdater EllipsoidGraphics EllipsoidOutlineGeometry EllipsoidSurfaceAppearance EllipsoidTangentPlane EllipsoidTerrainProvider Entity EntityCluster EntityCollection EntityView Event EventHelper ExtrapolationType FeatureDetection Fog formatError FrameRateMonitor Fullscreen FullscreenButton FullscreenButtonViewModel Geocoder GeocoderService GeocoderViewModel GeographicProjection GeographicTilingScheme GeoJsonDataSource Geometry GeometryAttribute GeometryAttributes GeometryInstance GeometryInstanceAttribute GeometryPipeline GeometryUpdater GeometryVisualizer getAbsoluteUri getBaseUri getExtensionFromUri GetFeatureInfoFormat getFilenameFromUri getImagePixels getTimestamp Globe GoogleEarthEnterpriseImageryProvider GoogleEarthEnterpriseMetadata GoogleEarthEnterpriseTerrainData GoogleEarthEnterpriseTerrainProvider GoogleEarthImageryProvider GregorianDate GridImageryProvider GridMaterialProperty GroundPrimitive HeadingPitchRange HeadingPitchRoll HeightmapTerrainData HeightReference HermitePolynomialApproximation HermiteSpline HomeButton HomeButtonViewModel HorizontalOrigin ImageMaterialProperty ImageryLayer ImageryLayerCollection ImageryLayerFeatureInfo ImageryProvider ImagerySplitDirection IndexDatatype InfoBox InfoBoxViewModel InterpolationAlgorithm Intersect Intersections2D IntersectionTests Interval isArray isLeapYear Iso8601 JulianDate KeyboardEventModifier KmlDataSource KmlFeatureData Label LabelCollection LabelGraphics LabelStyle LabelVisualizer LagrangePolynomialApproximation LeapSecond LinearApproximation LinearSpline loadArrayBuffer loadBlob loadCRN loadImage loadImageViaBlob loadJson loadJsonp loadKTX loadText loadWithXhr loadXML MapboxImageryProvider MapMode2D MapProjection Material MaterialAppearance MaterialProperty Matrix2 Matrix3 Matrix4 mergeSort Model ModelAnimation ModelAnimationCollection ModelAnimationLoop ModelGraphics ModelMaterial ModelMesh ModelNode ModelVisualizer Moon NavigationHelpButton NavigationHelpButtonViewModel NearFarScalar NeverTileDiscardPolicy NodeTransformationProperty objectToQuery Occluder OrientedBoundingBox OrthographicOffCenterFrustum Packable PackableForInterpolation PathGraphics PathVisualizer PerformanceWatchdog PerformanceWatchdogViewModel PerInstanceColorAppearance PerspectiveFrustum PerspectiveOffCenterFrustum PinBuilder PixelFormat Plane PointGraphics pointInsideTriangle PointPrimitive PointPrimitiveCollection PointVisualizer PolygonGeometry PolygonGeometryUpdater PolygonGraphics PolygonHierarchy PolygonOutlineGeometry Polyline PolylineArrowMaterialProperty PolylineCollection PolylineColorAppearance PolylineDashMaterialProperty PolylineGeometry PolylineGeometryUpdater PolylineGlowMaterialProperty PolylineGraphics PolylineMaterialAppearance PolylineOutlineMaterialProperty PolylineVolumeGeometry PolylineVolumeGeometryUpdater PolylineVolumeGraphics PolylineVolumeOutlineGeometry PositionProperty PositionPropertyArray Primitive PrimitiveCollection PrimitiveType ProjectionPicker ProjectionPickerViewModel Property PropertyArray PropertyBag ProviderViewModel QuadraticRealPolynomial QuantizedMeshTerrainData QuarticRealPolynomial Quaternion QuaternionSpline queryToObject Queue Ray Rectangle RectangleGeometry RectangleGeometryUpdater RectangleGraphics RectangleOutlineGeometry ReferenceFrame ReferenceProperty  RequestErrorEvent Rotation RuntimeError SampledPositionProperty SampledProperty sampleTerrain sampleTerrainMostDetailed Scene SceneMode SceneModePicker SceneModePickerViewModel SceneTransforms ScreenSpaceCameraController ScreenSpaceEventHandler ScreenSpaceEventType SelectionIndicator SelectionIndicatorViewModel ShadowMap ShadowMode ShowGeometryInstanceAttribute Simon1994PlanetaryPositions SimplePolylineGeometry SingleTileImageryProvider SkyAtmosphere SphereGeometry SphereOutlineGeometry Spherical Spline StencilFunction StencilOperation StripeMaterialProperty StripeOrientation subdivideArray Sun SvgPathBindingHandler TaskProcessor TerrainData TerrainProvider throttleRequestByServer TileAvailability TileCoordinatesImageryProvider TileDiscardPolicy TileProviderError TilingScheme TimeInterval TimeIntervalCollection TimeIntervalCollectionPositionProperty TimeIntervalCollectionProperty Timeline TimeStandard ToggleButtonViewModel Transforms TranslationRotationScale TridiagonalSystemSolver TrustedServers UrlTemplateImageryProvider VelocityOrientationProperty VelocityVectorProperty VertexFormat VerticalOrigin VideoSynchronizer Viewer viewerCesiumInspectorMixin viewerDragDropMixin viewerPerformanceWatchdogMixin ViewportQuad Visibility Visualizer VRButton VRButtonViewModel VRTheWorldTerrainProvider WallGeometry WallGeometryUpdater WallGraphics WallOutlineGeometry WebGLConstants WebMapServiceImageryProvider WebMapTileServiceImageryProvider WebMercatorProjection WebMercatorTilingScheme WindingOrder baseColor baseLayerPicker creditContainer dataSources entities fromDegrees imageryLayers imageryProvider pixelSize scene3DOnly sceneMode sceneModePicker selectionIndicator showRenderLoopErrors terrainProvider withAlpha

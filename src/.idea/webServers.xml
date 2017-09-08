@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="4cb5317f-cd95-4eac-8d45-43c3bfe9289f" name="SJZQX" url="http://120.27.4.198">
+        <fileTransfer host="120.27.4.198" port="22" privateKey="$USER_HOME$/.ssh/id_rsa" rootFolder="/chinkun" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
