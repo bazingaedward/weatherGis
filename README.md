@@ -1,4 +1,4 @@
-# sjzqx
+# WeatherGis
 Django Web Application
 
 core packages:
