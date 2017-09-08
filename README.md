@@ -10,6 +10,6 @@ Django Web Application for atmosphere elements
   Precipitation
 
 ## core packages:
-  matplotlib(python)
-  Basemap(python)
-  openlayer(javascript)
+  1.matplotlib(python)
+  2.Basemap(python)
+  3.openlayer(javascript)
